@@ -4,16 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using NotesApi;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args); 
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=notes.db"));
 
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
+    .AddJwtBearer(options => {
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = false,
@@ -26,14 +24,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddControllers();
 
-var app = builder.Build();
+var app = builder.Build(); 
+
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureDeleted(); // usuwanie starej
+    db.Database.Migrate();      // tworzenie nowej
+}
 
 app.UseDefaultFiles();
 app.UseStaticFiles();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();
